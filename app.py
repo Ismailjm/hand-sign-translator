@@ -9,6 +9,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
+import time
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -23,17 +24,18 @@ mp_drawing_styles = mp.solutions.drawing_styles
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
 labels_dict = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J', 10: 'K', 11: 'L',
-                12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 20: 'U', 21: 'V', 22: 'W',
-                23: 'X', 24: 'Y', 25: 'Z', 27: 'delete', 26: 'space'}
+               12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 20: 'U', 21: 'V', 22: 'W',
+               23: 'X', 24: 'Y', 25: 'Z', 27: 'delete', 26: 'space'}
 
 cap = cv2.VideoCapture(0)
 
 # Global variables to store the sentence and the last detected sign
 sentence = ""
 last_detected_sign = ""
+last_detection_time = time.time()  # To track the last detection time
 
 def generate_frames():
-    global sentence, last_detected_sign
+    global sentence, last_detected_sign, last_detection_time
     while True:
         data_aux = []
         x_ = []
@@ -48,7 +50,11 @@ def generate_frames():
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+        # current_time = time.time()
+        # if current_time - last_detection_time >= 1:  # Check if 1 second has passed
         results = hands.process(frame_rgb)
+        # last_detection_time = current_time  # Update the last detection time
+
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(
@@ -74,7 +80,7 @@ def generate_frames():
 
             expected_features = 42
             current_features = len(data_aux)
-        
+
             if current_features < expected_features:
                 data_aux.extend([0] * (expected_features - current_features))
             elif current_features > expected_features:
@@ -95,8 +101,11 @@ def generate_frames():
                         cv2.LINE_AA)
 
             # Update the sentence and print it only if the detected sign is different from the last one
-            if predicted_character != last_detected_sign:
-                last_detected_sign = predicted_character
+            # if predicted_character != last_detected_sign:
+            #     last_detected_sign = predicted_character
+            current_time = time.time()
+            if current_time - last_detection_time >= 1:  # Check if 1 second has passed
+                last_detection_time = current_time  # Update the last detection time
                 if predicted_character == 'delete':
                     sentence = sentence[:-1]
                 elif predicted_character == 'space':
@@ -105,8 +114,8 @@ def generate_frames():
                     sentence += predicted_character
                 print(f"Current sentence: {sentence}")
 
-                # Emit the predicted character to the frontend
-                socketio.emit('hand_sign', {'sign': predicted_character})
+                # Emit the updated sentence to the frontend
+                socketio.emit('update_sentence', {'sentence': sentence})
 
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
