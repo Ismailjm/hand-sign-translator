@@ -1,53 +1,22 @@
 <!-- <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Sign Interpreter</title>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            var socket = io.connect('http://' + document.domain + ':' + location.port);
-            var textarea = document.getElementById('translation');
-
-            socket.on('hand_sign', function(data) {
-                let currentText = textarea.value;
-                if (data.sign === 'delete') {
-                    textarea.value = currentText.slice(0, -1);
-                } else if (data.sign === 'space') {
-                    textarea.value = currentText + ' ';
-                } else {
-                    textarea.value = currentText + data.sign;
-                }
-            });
-        });
-    </script>
-</head>
-<body>
-    <h1>Hand Sign Interpreter</h1>
-    <div>
-        <img src="{{ url_for('video_feed') }}" width="800">
-    </div>
-    <textarea id="translation" rows="10" cols="50" readonly></textarea>
-</body>
-</html> -->
-<!DOCTYPE html>
-<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hand Sign Interpreter</title>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", (event) => {
-        var socket = io.connect(
-          "http://" + document.domain + ":" + location.port
-        );
-        var textarea = document.getElementById("translation");
+        function fetchSentence() {
+          fetch("/get_sentence")
+            .then((response) => response.json())
+            .then((data) => {
+              console.log(data); // Add this line to log the response to the console
+              document.getElementById("translation").value = data.sentence;
+            });
+        }
 
-        socket.on("update_sentence", function (data) {
-          textarea.value = data.sentence;
-        });
+        // Poll the server every second for updates
+        setInterval(fetchSentence, 1000);
       });
     </script>
   </head>
@@ -58,4 +27,64 @@
     </div>
     <textarea id="translation" rows="10" cols="50" readonly></textarea>
   </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hand Sign Interpreter</title>
+</head>
+<body>
+  <h1>Hand Sign Interpreter</h1>
+  <video id="video" width="640" height="480" autoplay></video>
+  <textarea id="translation" rows="10" cols="50" readonly></textarea>
+
+  <script>
+    const video = document.getElementById('video');
+
+    // Access user's webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.log('Error accessing the camera: ' + err);
+      });
+
+    // Capture a frame from the video every 1 second
+    setInterval(() => {
+      captureFrameAndSendToServer();
+    }, 1000);
+
+    function captureFrameAndSendToServer() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert canvas to base64 image
+      const frame = canvas.toDataURL('image/jpeg');
+
+      // Send frame to Flask server
+      fetch('https://your-render-app.com/process_frame', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: frame })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Update translation textarea with the predicted sign
+        const textarea = document.getElementById('translation');
+        textarea.value += data.prediction;
+      })
+      .catch(err => console.log('Error sending frame to server: ' + err));
+    }
+  </script>
+</body>
 </html>
+
