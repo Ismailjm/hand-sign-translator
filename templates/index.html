@@ -31,60 +31,67 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hand Sign Interpreter</title>
-</head>
-<body>
-  <h1>Hand Sign Interpreter</h1>
-  <video id="video" width="640" height="480" autoplay></video>
-  <textarea id="translation" rows="10" cols="50" readonly></textarea>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hand Sign Interpreter</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+        const video = document.querySelector("video");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const textarea = document.getElementById("translation");
+        let lastSign = ""; // Track the last sign to avoid duplicates
 
-  <script>
-    const video = document.getElementById('video');
+        // Access webcam
+        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+          video.srcObject = stream;
+          video.play();
+          captureFrame();
+        });
 
-    // Access user's webcam
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        console.log('Error accessing the camera: ' + err);
+        // Function to capture frames and send to the server
+        function captureFrame() {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const dataURL = canvas.toDataURL("image/jpeg");
+
+          // Send the frame to the server
+          fetch("/process_frame", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ image: dataURL }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.prediction && data.prediction !== lastSign) {
+                lastSign = data.prediction;
+                if (data.prediction === "delete") {
+                  textarea.value = textarea.value.slice(0, -1); // Delete last character
+                } else if (data.prediction === "space") {
+                  textarea.value += " "; // Add space
+                } else {
+                  textarea.value += data.prediction; // Add predicted character
+                }
+              }
+            });
+
+          // Repeat every second to avoid too many requests
+          setTimeout(captureFrame, 1000); // 1-second delay between captures
+        }
       });
-
-    // Capture a frame from the video every 1 second
-    setInterval(() => {
-      captureFrameAndSendToServer();
-    }, 1000);
-
-    function captureFrameAndSendToServer() {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      // Convert canvas to base64 image
-      const frame = canvas.toDataURL('image/jpeg');
-
-      // Send frame to Flask server
-      fetch('https://your-render-app.com/process_frame', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ image: frame })
-      })
-      .then(response => response.json())
-      .then(data => {
-        // Update translation textarea with the predicted sign
-        const textarea = document.getElementById('translation');
-        textarea.value += data.prediction;
-      })
-      .catch(err => console.log('Error sending frame to server: ' + err));
-    }
-  </script>
-</body>
+    </script>
+  </head>
+  <body>
+    <h1>Hand Sign Interpreter</h1>
+    <div>
+      <video width="800" autoplay></video>
+    </div>
+    <textarea id="translation" rows="10" cols="50" readonly></textarea>
+  </body>
 </html>
-
