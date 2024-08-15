@@ -49,3 +49,4 @@ sounddevice==0.4.7
 threadpoolctl==3.5.0
 Werkzeug==3.0.3
 wsproto==1.2.0
+gunicorn
