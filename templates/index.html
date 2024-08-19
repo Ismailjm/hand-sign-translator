@@ -64,3 +64,53 @@
     <textarea id="translation" rows="10" cols="50" readonly></textarea>
   </body>
 </html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hand Sign Interpreter</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+        var socket = io.connect(
+          "http://" + document.domain + ":" + location.port
+        );
+        var imgElement = document.getElementById("hand-image");
+
+        function sendFrame() {
+          fetch("/process_frame", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ image: getBase64Image() }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.image) {
+                imgElement.src = data.image;
+              }
+            })
+            .catch((error) => console.error("Error:", error));
+        }
+
+        function getBase64Image() {
+          // Implement the logic to capture image from webcam and convert to base64
+          // This is a placeholder function; you'll need to replace it with actual implementation
+          return "data:image/jpeg;base64,..."; // Return base64 encoded image
+        }
+
+        setInterval(sendFrame, 1000); // Adjust the interval as needed
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Hand Sign Interpreter</h1>
+    <div>
+      <img id="hand-image" width="800" />
+    </div>
+    <textarea id="translation" rows="10" cols="50" readonly></textarea>
+  </body>
+</html> -->
