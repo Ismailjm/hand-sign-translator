@@ -4,32 +4,72 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hand Sign Interpreter</title>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+      }
+      #processedImage {
+        width: 50%;
+        height: auto;
+        max-height: 60vh;
+        object-fit: contain;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+      }
+      textarea {
+        width: 90%;
+        height: 25vh;
+        font-size: 20px;
+        margin-top: 20px;
+        padding: 10px;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        resize: none;
+        background-color: #ffffff;
+      },
+      h1 {
+        color: #333;
+      }
+    </style>
     <script>
       document.addEventListener("DOMContentLoaded", (event) => {
         const video = document.querySelector("video");
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const processedImage = document.getElementById("processedImage");
         const textarea = document.getElementById("translation");
+        let isProcessing = false;
         let lastSign = ""; // Track the last sign to avoid duplicates
 
         // Access webcam
         navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
           video.srcObject = stream;
           video.play();
-          captureFrame();
+          requestDraw(); // Start drawing immediately
+          requestDetection(); // Start detection immediately
         });
 
-        // Function to capture frames and send to the server
-        function captureFrame() {
-          canvas.width = video.videoWidth;
+        // Function to request hand drawing from the server for every frame
+        function requestDraw() {
+          const canvas = document.createElement("canvas");
+          // canvas.width = video.videoWidth / 2; // Reduce resolution to half
+          canvas.width = video.videoWidth ; // Reduce resolution to half
+          // canvas.height = video.videoHeight / 2;
           canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           const dataURL = canvas.toDataURL("image/jpeg");
 
-          // Send the frame to the server
-          fetch("/process_frame", {
+          fetch("/draw_hand", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -38,79 +78,71 @@
           })
             .then((response) => response.json())
             .then((data) => {
-              if (data.prediction && data.prediction !== lastSign) {
-                lastSign = data.prediction;
-                if (data.prediction === "delete") {
-                  textarea.value = textarea.value.slice(0, -1); // Delete last character
-                } else if (data.prediction === "space") {
-                  textarea.value += " "; // Add space
-                } else {
-                  textarea.value += data.prediction; // Add predicted character
-                }
-              }
-            });
-
-          // Repeat every second to avoid too many requests
-          setTimeout(captureFrame, 1000); // 1-second delay between captures
-        }
-      });
-    </script>
-  </head>
-  <body>
-    <h1>Hand Sign Interpreter</h1>
-    <div>
-      <video width="800" autoplay></video>
-    </div>
-    <textarea id="translation" rows="10" cols="50" readonly></textarea>
-  </body>
-</html>
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hand Sign Interpreter</title>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", (event) => {
-        var socket = io.connect(
-          "http://" + document.domain + ":" + location.port
-        );
-        var imgElement = document.getElementById("hand-image");
-
-        function sendFrame() {
-          fetch("/process_frame", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ image: getBase64Image() }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
               if (data.image) {
-                imgElement.src = data.image;
+                processedImage.src = data.image;
+              } else {
+                console.error("Error: No image data returned", data);
               }
             })
-            .catch((error) => console.error("Error:", error));
+            .catch((error) => console.error("Error drawing landmarks:", error));
+
+          // Process every 500ms (2 FPS)
+          setTimeout(requestDraw, 100); // This reduces the frequency of requests, improving performance
         }
 
-        function getBase64Image() {
-          // Implement the logic to capture image from webcam and convert to base64
-          // This is a placeholder function; you'll need to replace it with actual implementation
-          return "data:image/jpeg;base64,..."; // Return base64 encoded image
-        }
+        function requestDetection() {
+          if (!isProcessing) {
+            isProcessing = true;
 
-        setInterval(sendFrame, 1000); // Adjust the interval as needed
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth / 2; // Reduce resolution to half
+            canvas.height = video.videoHeight / 2;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const dataURL = canvas.toDataURL("image/jpeg");
+
+            fetch("/process_frame", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ image: dataURL }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                console.log("Received prediction data:", data);
+                // if (data.prediction && data.prediction !== lastSign) {
+                  lastSign = data.prediction;
+                  if (data.prediction === "delete") {
+                    textarea.value = textarea.value.slice(0, -1); // Delete last character
+                  } else if (data.prediction === "space") {
+                    textarea.value += " "; // Add space
+                  } else {
+                    textarea.value += data.prediction; // Add predicted character
+                  }
+                // }
+                isProcessing = false;
+              })
+              .catch((error) => {
+                console.error("Error processing frame:", error);
+                isProcessing = false;
+              });
+          }
+
+          // Process detection every 2 seconds
+          setTimeout(requestDetection, 1500); // This reduces the frequency of requests, improving performance
+        }
       });
     </script>
   </head>
   <body>
     <h1>Hand Sign Interpreter</h1>
-    <div>
-      <img id="hand-image" width="800" />
-    </div>
+    <video autoplay style="display: none"></video>
+    <!-- Hidden video -->
+    <img id="processedImage" />
+    <!-- Display the processed frame -->
     <textarea id="translation" rows="10" cols="50" readonly></textarea>
+    <!-- Display recognized letters -->
   </body>
-</html> -->
+</html>
