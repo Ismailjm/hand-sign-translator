@@ -20,7 +20,7 @@ def process_all_classes(data_folder):
         if os.path.isdir(class_folder_path):
             flip_images_in_folder(class_folder_path)
 
-# Provide the path to your 'data' folder here
+# Provide the path to your images folder here
 data_folder = "./data"
 
 process_all_classes(data_folder)
