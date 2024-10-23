@@ -36,9 +36,23 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         resize: none;
         background-color: #ffffff;
-      },
+      }
       h1 {
         color: #333;
+      }
+      button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 18px;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: #ffffff;
+        border: 2px solid #ccc;
+        color: #333;
+        transition: background-color 0.3s;
+      }
+      button.active {
+        background-color: #ccc;
       }
     </style>
     <script>
@@ -46,8 +60,11 @@
         const video = document.querySelector("video");
         const processedImage = document.getElementById("processedImage");
         const textarea = document.getElementById("translation");
+        const alphabetBtn = document.getElementById("alphabetBtn");
+        const expressionBtn = document.getElementById("expressionBtn");
         let isProcessing = false;
         let lastSign = ""; // Track the last sign to avoid duplicates
+        let currentModel = "alphabet"; // Default to alphabet model
 
         // Access webcam
         navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
@@ -56,13 +73,50 @@
           requestDraw(); // Start drawing immediately
           requestDetection(); // Start detection immediately
         });
+        // Function to update button styles
+        function updateButtonStyles() {
+          alphabetBtn.classList.toggle("active", currentModel === "alphabet");
+          expressionBtn.classList.toggle(
+            "active",
+            currentModel === "expression"
+          );
+        }
+        // Initial button style update
+        updateButtonStyles();
+        // Add event listeners to model switch buttons
+        alphabetBtn.addEventListener("click", () => {
+          currentModel = "alphabet";
+          textarea.value = ""; // Clear the textarea on model switch
+          console.log("Switched to Alphabet Model");
+          updateButtonStyles();
+        });
+
+        expressionBtn.addEventListener("click", () => {
+          currentModel = "expression";
+          textarea.value = ""; // Clear the textarea on model switch
+          console.log("Switched to Expression Model");
+          updateButtonStyles();
+        });
+
+        // Add event listeners to model switch buttons
+        document.getElementById("alphabetBtn").addEventListener("click", () => {
+          currentModel = "alphabet";
+          textarea.value = ""; // Clear the textarea on model switch
+          console.log("Switched to Alphabet Model");
+        });
+
+        document
+          .getElementById("expressionBtn")
+          .addEventListener("click", () => {
+            currentModel = "expression";
+            textarea.value = ""; // Clear the textarea on model switch
+            console.log("Switched to Expression Model");
+          });
 
         // Function to request hand drawing from the server for every frame
         function requestDraw() {
           const canvas = document.createElement("canvas");
-          // canvas.width = video.videoWidth / 2; // Reduce resolution to half
-          canvas.width = video.videoWidth ; // Reduce resolution to half
-          // canvas.height = video.videoHeight / 2;
+          canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           const ctx = canvas.getContext("2d");
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -87,7 +141,7 @@
             .catch((error) => console.error("Error drawing landmarks:", error));
 
           // Process every 500ms (2 FPS)
-          setTimeout(requestDraw, 100); // This reduces the frequency of requests, improving performance
+          setTimeout(requestDraw, 100);
         }
 
         function requestDetection() {
@@ -95,7 +149,7 @@
             isProcessing = true;
 
             const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth / 2; // Reduce resolution to half
+            canvas.width = video.videoWidth / 2;
             canvas.height = video.videoHeight / 2;
             const ctx = canvas.getContext("2d");
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -107,21 +161,18 @@
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ image: dataURL }),
+              body: JSON.stringify({ image: dataURL, model: currentModel }),
             })
               .then((response) => response.json())
               .then((data) => {
-                console.log("Received prediction data:", data);
-                // if (data.prediction && data.prediction !== lastSign) {
-                  lastSign = data.prediction;
-                  if (data.prediction === "delete") {
-                    textarea.value = textarea.value.slice(0, -1); // Delete last character
-                  } else if (data.prediction === "space") {
-                    textarea.value += " "; // Add space
-                  } else {
-                    textarea.value += data.prediction; // Add predicted character
-                  }
-                // }
+                lastSign = data.prediction;
+                if (data.prediction === "delete") {
+                  textarea.value = textarea.value.slice(0, -1); // Delete last character
+                } else if (data.prediction === "space") {
+                  textarea.value += " "; // Add space
+                } else {
+                  textarea.value += data.prediction; // Add predicted character
+                }
                 isProcessing = false;
               })
               .catch((error) => {
@@ -131,7 +182,7 @@
           }
 
           // Process detection every 2 seconds
-          setTimeout(requestDetection, 1500); // This reduces the frequency of requests, improving performance
+          setTimeout(requestDetection, 1500);
         }
       });
     </script>
@@ -139,10 +190,11 @@
   <body>
     <h1>Hand Sign Interpreter</h1>
     <video autoplay style="display: none"></video>
-    <!-- Hidden video -->
     <img id="processedImage" />
-    <!-- Display the processed frame -->
     <textarea id="translation" rows="10" cols="50" readonly></textarea>
-    <!-- Display recognized letters -->
+    <div>
+      <button id="alphabetBtn">Alphabet Model</button>
+      <button id="expressionBtn">Expression Model</button>
+    </div>
   </body>
 </html>
