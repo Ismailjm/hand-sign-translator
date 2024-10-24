@@ -4,7 +4,7 @@ import cv2
 def flip_images_in_folder(folder_path):
     for filename in os.listdir(folder_path):
         if filename.endswith(".jpg") or filename.endswith(".png"):
-            img_path = os.path.join(folder_path, filename)
+            img_path = os.path.join(folder_path, filename)3E4R5T6Y7U8IO9
             img = cv2.imread(img_path)
 
             # Flip the image horizontally
