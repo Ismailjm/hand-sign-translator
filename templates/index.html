@@ -7,33 +7,42 @@
     <style>
       body {
         margin: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background-color: #181818;
+        background-color: #202224;
         font-family: Arial, sans-serif;
         min-height: 100vh;
-        color: #FFFFFF;
+        color: #84d6c0;
       }
 
-      /* Navigation Bar Styles */
-      nav {
-        width: 100%;
-        background-color: #ffffff;
+      /* .container {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 2rem;
         padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        height: 100vh;
+      } */
+
+      .main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      /* Navigation Bar */
+      nav {
+        background-color: #374443;
+        padding: 1rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        border-radius: 8px;
       }
 
       .logo {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        color: #84d6c0;
         text-decoration: none;
-        color: #FFFFFF;
         font-weight: bold;
       }
 
@@ -42,219 +51,411 @@
         width: auto;
       }
 
-      .nav-buttons {
+      /* Update the container grid to give less space to the main content */
+      .container {
+        display: grid;
+        grid-template-columns: minmax(400px, 800px) 300px; /* Limits main content width */
+        gap: 2rem;
+        padding: 1rem;
+        height: 100vh;
+        margin: 0 auto; /* Centers the container */
+        max-width: 1200px; /* Maximum overall width */
+      }
+
+      /* Update video container size */
+      .video-container {
+        position: relative;
+        background-color: #374443;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-grow: 1;
+        max-height: 60vh; /* Limits the height to 60% of viewport height */
+        aspect-ratio: 4/3; /* Maintains a consistent aspect ratio */
+      }
+
+      /* Update the processed image size */
+      #processedImage {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Ensures the image maintains its aspect ratio */
+      }
+
+      /* Add responsive adjustments */
+      @media (max-width: 1024px) {
+        .container {
+          grid-template-columns: minmax(350px, 600px) 250px;
+        }
+
+        .video-container {
+          max-height: 50vh;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .video-container {
+          max-height: 40vh;
+        }
+      }
+
+      /* Controls Bar */
+      .controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(55, 68, 67, 0.9);
+        padding: 1rem;
         display: flex;
         gap: 1rem;
+        justify-content: center;
       }
 
-      .nav-button {
-        padding: 0.5rem 1rem;
-        border: 2px solid #4A1C4E;
-        border-radius: 5px;
-        background-color: transparent;
-        color: #4A1C4E;
+      .control-btn {
+        background: none;
+        border: none;
+        color: #84d6c0;
         cursor: pointer;
-        transition: all 0.3s;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.3s;
       }
 
-      .nav-button:hover {
-        background-color: #4A1C4E;
-        color: #FFFFFF;FFFFFF
+      .control-btn:hover {
+        background-color: rgba(132, 214, 192, 0.1);
       }
 
-      /* Main Content Styles */
-      #processedImage {
-        width: 50%;
-        height: auto;
-        max-height: 60vh;
-        object-fit: contain;
-        border: 2px solid #4A1C4E;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        margin-bottom: 20px;
-        background-color: #FFFFFF;
+      /* Model Selection */
+      .model-selection {
+        background-color: #374443;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: auto;
       }
 
-      textarea {
-        width: 90%;
-        height: 25vh;
-        font-size: 20px;
-        margin-top: 20px;
-        padding: 10px;
-        border: 2px solid #4A1C4E;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        resize: none;
-        background-color: #FFFFFF;
-        color: #181818;
+      .model-dropdown {
+        width: 100%;
+        padding: 0.75rem;
+        background-color: #202224;
+        border: 1px solid #84d6c0;
+        color: #84d6c0;
+        border-radius: 4px;
+        margin-bottom: 1rem;
       }
 
-      h1 {
-        color: #FFFFFF;
-        margin-bottom: 2rem;
+      .model-description {
+        color: #84d6c0;
+        font-size: 0.9rem;
+        line-height: 1.5;
       }
 
-      /* Model Selection Buttons - Updated Smaller Size */
-      .model-buttons {
+      /* History Panel */
+      .history-panel {
+        background-color: #374443;
+        border-radius: 8px;
+        padding: 1rem;
+        height: 100%;
+        overflow: hidden;
         display: flex;
-        gap: 0.75rem;  /* Reduced gap between buttons */
-        margin-top: 1rem;
+        flex-direction: column;
       }
 
-      button#alphabetBtn,
-      button#expressionBtn {
-        margin: 0;
-        padding: 8px 16px;  /* Reduced padding */
-        font-size: 14px;    /* Smaller font size */
-        border-radius: 4px; /* Slightly smaller border radius */
-        cursor: pointer;
-        background-color: #181818;
-        border: 2px solid #C10708;
-        color: #FFFFFF;
-        transition: all 0.3s;
-        font-weight: 500;   /* Medium font weight for better readability at small size */
+      .history-title {
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(132, 214, 192, 0.3);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
-      button#alphabetBtn:hover,
-      button#expressionBtn:hover {
-        background-color: #C10708;
-        color: #FFFFFF;
+      .history-counter {
+        font-size: 0.8rem;
+        color: rgba(132, 214, 192, 0.7);
       }
 
-      button#alphabetBtn.active,
-      button#expressionBtn.active {
-        background-color: #C10708;
-        color: #FFFFFF;
+      .history-list {
+        flex-grow: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .history-item {
+        background-color: rgba(132, 214, 192, 0.05);
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 2px solid #84d6c0;
+      }
+
+      .history-time {
+        font-size: 0.8rem;
+        color: rgba(132, 214, 192, 0.7);
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+      }
+
+      .history-text {
+        color: #84d6c0;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #374443;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(132, 214, 192, 0.3);
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(132, 214, 192, 0.5);
+      }
+
+      /* Timeline dots and lines */
+      .timeline-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #84d6c0;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+      }
+
+      .timeline-line {
+        width: 2px;
+        background-color: rgba(132, 214, 192, 0.3);
+        height: 100%;
+        margin-left: 3px;
       }
     </style>
     <script>
-      // Your existing JavaScript code remains the same
       document.addEventListener("DOMContentLoaded", (event) => {
         const video = document.querySelector("video");
         const processedImage = document.getElementById("processedImage");
-        const textarea = document.getElementById("translation");
-        const alphabetBtn = document.getElementById("alphabetBtn");
-        const expressionBtn = document.getElementById("expressionBtn");
+        const modelSelect = document.getElementById("modelSelect");
+        const historyList = document.getElementById("historyList");
+        const detectionCounter = document.getElementById("detectionCounter");
         let isProcessing = false;
-        let lastSign = "";
-        let currentModel = "alphabet";
+        let detectionCount = 0;
+        let currentModel = "alphabet"; // Add this line to track current model
 
-        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-          video.srcObject = stream;
-          video.play();
-          requestDraw();
-          requestDetection();
-        });
+        // Initialize video stream
+        navigator.mediaDevices
+          .getUserMedia({ video: true })
+          .then((stream) => {
+            video.srcObject = stream;
+            video.play();
+            requestDraw();
+            requestDetection();
+          })
+          .catch((error) => {
+            console.error("Error accessing camera:", error);
+          });
 
-        function updateButtonStyles() {
-          alphabetBtn.classList.toggle("active", currentModel === "alphabet");
-          expressionBtn.classList.toggle("active", currentModel === "expression");
-        }
-
-        updateButtonStyles();
-
-        alphabetBtn.addEventListener("click", () => {
-          currentModel = "alphabet";
-          textarea.value = "";
-          console.log("Switched to Alphabet Model");
-          updateButtonStyles();
-        });
-
-        expressionBtn.addEventListener("click", () => {
-          currentModel = "expression";
-          textarea.value = "";
-          console.log("Switched to Expression Model");
-          updateButtonStyles();
+        // Add model selection event listener
+        modelSelect.addEventListener("change", (e) => {
+          currentModel = e.target.value;
+          updateModelDescription();
         });
 
         function requestDraw() {
+          if (!video.videoWidth) {
+            // Wait for video to be ready
+            requestAnimationFrame(requestDraw);
+            return;
+          }
+
           const canvas = document.createElement("canvas");
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           const ctx = canvas.getContext("2d");
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          const dataURL = canvas.toDataURL("image/jpeg");
+          try {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL("image/jpeg");
 
-          fetch("/draw_hand", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ image: dataURL }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.image) {
-                processedImage.src = data.image;
-              } else {
-                console.error("Error: No image data returned", data);
-              }
+            fetch("/draw_hand", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ image: dataURL }),
             })
-            .catch((error) => console.error("Error drawing landmarks:", error));
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then((data) => {
+                if (data.image) {
+                  processedImage.src = data.image;
+                } else {
+                  console.error("Error: No image data returned", data);
+                }
+              })
+              .catch((error) =>
+                console.error("Error drawing landmarks:", error)
+              );
+          } catch (error) {
+            console.error("Error processing canvas:", error);
+          }
 
+          // Continue the drawing loop
           setTimeout(requestDraw, 100);
         }
 
         function requestDetection() {
-          if (!isProcessing) {
+          if (!isProcessing && video.videoWidth) {
             isProcessing = true;
 
             const canvas = document.createElement("canvas");
             canvas.width = video.videoWidth / 2;
             canvas.height = video.videoHeight / 2;
             const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const dataURL = canvas.toDataURL("image/jpeg");
+            try {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const dataURL = canvas.toDataURL("image/jpeg");
 
-            fetch("/process_frame", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ image: dataURL, model: currentModel }),
-            })
-              .then((response) => response.json())
-              .then((data) => {
-                lastSign = data.prediction;
-                if (data.prediction === "delete") {
-                  textarea.value = textarea.value.slice(0, -1);
-                } else if (data.prediction === "space") {
-                  textarea.value += " ";
-                } else {
-                  textarea.value += data.prediction;
-                }
-                isProcessing = false;
+              fetch("/process_frame", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  image: dataURL,
+                  model: currentModel,
+                }),
               })
-              .catch((error) => {
-                console.error("Error processing frame:", error);
-                isProcessing = false;
-              });
+                .then((response) => {
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                  }
+                  return response.json();
+                })
+                .then((data) => {
+                  if (data.prediction) {
+                    addToHistory(data.prediction);
+                  }
+                  isProcessing = false;
+                })
+                .catch((error) => {
+                  console.error("Error processing frame:", error);
+                  isProcessing = false;
+                });
+            } catch (error) {
+              console.error("Error processing canvas:", error);
+              isProcessing = false;
+            }
           }
 
+          // Continue the detection loop
           setTimeout(requestDetection, 1500);
+        }
+
+        function updateModelDescription() {
+          const description = document.getElementById("modelDescription");
+          const model = modelSelect.value;
+
+          if (model === "alphabet") {
+            description.textContent =
+              "Detect and interpret American Sign Language alphabet signs A-Z, along with space and delete gestures.";
+          } else {
+            description.textContent =
+              "Recognize common expressions and phrases in sign language such as 'Hello', 'Thank You', 'Yes', 'No', and 'I Love You'.";
+          }
+        }
+
+        modelSelect.addEventListener("change", updateModelDescription);
+
+        function addToHistory(sign) {
+          if (sign && sign !== "delete" && sign !== "space") {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            detectionCount++;
+
+            const historyItem = document.createElement("div");
+            historyItem.className = "history-item";
+
+            const timeElement = document.createElement("div");
+            timeElement.className = "history-time";
+            timeElement.innerHTML = `
+              <span>${timeString}</span>
+              <span>Detection #${detectionCount}</span>
+            `;
+
+            const textElement = document.createElement("div");
+            textElement.className = "history-text";
+            textElement.textContent = sign;
+
+            historyItem.appendChild(timeElement);
+            historyItem.appendChild(textElement);
+
+            historyList.insertBefore(historyItem, historyList.firstChild);
+            detectionCounter.textContent = `${detectionCount} detections`;
+
+            // Keep only last 50 items
+            while (historyList.children.length > 50) {
+              historyList.removeChild(historyList.lastChild);
+            }
+          }
         }
       });
     </script>
   </head>
   <body>
-    <nav>
-      <a href="/" class="logo">
-        <img src="../res/logo_big.jpg" alt="Logo" />
-        <span>Hand Sign Interpreter</span>
-      </a>
-      <div class="nav-buttons">
-        <button class="nav-button">About</button>
-        <button class="nav-button">Contact</button>
+    <div class="container">
+      <div class="main-content">
+        <nav>
+          <a href="/" class="logo">
+            <img src="../res/logo_big.jpg" alt="Logo" />
+            <span>Hand Sign Interpreter</span>
+          </a>
+        </nav>
+
+        <div class="video-container">
+          <video autoplay style="display: none"></video>
+          <img id="processedImage" />
+          <!-- <div class="controls">
+            <button class="control-btn">⏸</button>
+            <button class="control-btn">⟲</button>
+            <button class="control-btn">⚙</button>
+          </div> -->
+        </div>
+
+        <div class="model-selection">
+          <select id="modelSelect" class="model-dropdown">
+            <option value="alphabet">ASL Alphabet Model</option>
+            <option value="expression">Expression Model</option>
+          </select>
+          <p id="modelDescription" class="model-description">
+            Detect and interpret American Sign Language alphabet signs A-Z,
+            along with space and delete gestures.
+          </p>
+        </div>
       </div>
-    </nav>
-    <video autoplay style="display: none"></video>
-    <img id="processedImage" />
-    <textarea id="translation" rows="10" cols="50" readonly></textarea>
-    <div class="model-buttons">
-      <button id="alphabetBtn">Alphabet Model</button>
-      <button id="expressionBtn">Expression Model</button>
+
+      <div class="history-panel">
+        <div class="history-title">
+          <h2>Detection History</h2>
+          <span id="detectionCounter" class="history-counter"
+            >0 detections</span
+          >
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </div>
     </div>
   </body>
 </html>
