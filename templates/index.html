@@ -10,52 +10,125 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        background-color: #f0f0f0;
+        background-color: #181818;
         font-family: Arial, sans-serif;
         min-height: 100vh;
+        color: #FFFFFF;
       }
+
+      /* Navigation Bar Styles */
+      nav {
+        width: 100%;
+        background-color: #ffffff;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: #FFFFFF;
+        font-weight: bold;
+      }
+
+      .logo img {
+        height: 40px;
+        width: auto;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .nav-button {
+        padding: 0.5rem 1rem;
+        border: 2px solid #4A1C4E;
+        border-radius: 5px;
+        background-color: transparent;
+        color: #4A1C4E;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .nav-button:hover {
+        background-color: #4A1C4E;
+        color: #FFFFFF;FFFFFF
+      }
+
+      /* Main Content Styles */
       #processedImage {
         width: 50%;
         height: auto;
         max-height: 60vh;
         object-fit: contain;
-        border: 2px solid #ccc;
+        border: 2px solid #4A1C4E;
         border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         margin-bottom: 20px;
+        background-color: #FFFFFF;
       }
+
       textarea {
         width: 90%;
         height: 25vh;
         font-size: 20px;
         margin-top: 20px;
         padding: 10px;
-        border: 2px solid #ccc;
+        border: 2px solid #4A1C4E;
         border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         resize: none;
-        background-color: #ffffff;
+        background-color: #FFFFFF;
+        color: #181818;
       }
+
       h1 {
-        color: #333;
+        color: #FFFFFF;
+        margin-bottom: 2rem;
       }
-      button {
-        margin: 10px;
-        padding: 10px 20px;
-        font-size: 18px;
-        border-radius: 5px;
+
+      /* Model Selection Buttons - Updated Smaller Size */
+      .model-buttons {
+        display: flex;
+        gap: 0.75rem;  /* Reduced gap between buttons */
+        margin-top: 1rem;
+      }
+
+      button#alphabetBtn,
+      button#expressionBtn {
+        margin: 0;
+        padding: 8px 16px;  /* Reduced padding */
+        font-size: 14px;    /* Smaller font size */
+        border-radius: 4px; /* Slightly smaller border radius */
         cursor: pointer;
-        background-color: #ffffff;
-        border: 2px solid #ccc;
-        color: #333;
-        transition: background-color 0.3s;
+        background-color: #181818;
+        border: 2px solid #C10708;
+        color: #FFFFFF;
+        transition: all 0.3s;
+        font-weight: 500;   /* Medium font weight for better readability at small size */
       }
-      button.active {
-        background-color: #ccc;
+
+      button#alphabetBtn:hover,
+      button#expressionBtn:hover {
+        background-color: #C10708;
+        color: #FFFFFF;
+      }
+
+      button#alphabetBtn.active,
+      button#expressionBtn.active {
+        background-color: #C10708;
+        color: #FFFFFF;
       }
     </style>
     <script>
+      // Your existing JavaScript code remains the same
       document.addEventListener("DOMContentLoaded", (event) => {
         const video = document.querySelector("video");
         const processedImage = document.getElementById("processedImage");
@@ -63,57 +136,37 @@
         const alphabetBtn = document.getElementById("alphabetBtn");
         const expressionBtn = document.getElementById("expressionBtn");
         let isProcessing = false;
-        let lastSign = ""; // Track the last sign to avoid duplicates
-        let currentModel = "alphabet"; // Default to alphabet model
+        let lastSign = "";
+        let currentModel = "alphabet";
 
-        // Access webcam
         navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
           video.srcObject = stream;
           video.play();
-          requestDraw(); // Start drawing immediately
-          requestDetection(); // Start detection immediately
+          requestDraw();
+          requestDetection();
         });
-        // Function to update button styles
+
         function updateButtonStyles() {
           alphabetBtn.classList.toggle("active", currentModel === "alphabet");
-          expressionBtn.classList.toggle(
-            "active",
-            currentModel === "expression"
-          );
+          expressionBtn.classList.toggle("active", currentModel === "expression");
         }
-        // Initial button style update
+
         updateButtonStyles();
-        // Add event listeners to model switch buttons
+
         alphabetBtn.addEventListener("click", () => {
           currentModel = "alphabet";
-          textarea.value = ""; // Clear the textarea on model switch
+          textarea.value = "";
           console.log("Switched to Alphabet Model");
           updateButtonStyles();
         });
 
         expressionBtn.addEventListener("click", () => {
           currentModel = "expression";
-          textarea.value = ""; // Clear the textarea on model switch
+          textarea.value = "";
           console.log("Switched to Expression Model");
           updateButtonStyles();
         });
 
-        // Add event listeners to model switch buttons
-        document.getElementById("alphabetBtn").addEventListener("click", () => {
-          currentModel = "alphabet";
-          textarea.value = ""; // Clear the textarea on model switch
-          console.log("Switched to Alphabet Model");
-        });
-
-        document
-          .getElementById("expressionBtn")
-          .addEventListener("click", () => {
-            currentModel = "expression";
-            textarea.value = ""; // Clear the textarea on model switch
-            console.log("Switched to Expression Model");
-          });
-
-        // Function to request hand drawing from the server for every frame
         function requestDraw() {
           const canvas = document.createElement("canvas");
           canvas.width = video.videoWidth;
@@ -140,7 +193,6 @@
             })
             .catch((error) => console.error("Error drawing landmarks:", error));
 
-          // Process every 500ms (2 FPS)
           setTimeout(requestDraw, 100);
         }
 
@@ -167,11 +219,11 @@
               .then((data) => {
                 lastSign = data.prediction;
                 if (data.prediction === "delete") {
-                  textarea.value = textarea.value.slice(0, -1); // Delete last character
+                  textarea.value = textarea.value.slice(0, -1);
                 } else if (data.prediction === "space") {
-                  textarea.value += " "; // Add space
+                  textarea.value += " ";
                 } else {
-                  textarea.value += data.prediction; // Add predicted character
+                  textarea.value += data.prediction;
                 }
                 isProcessing = false;
               })
@@ -181,18 +233,26 @@
               });
           }
 
-          // Process detection every 2 seconds
           setTimeout(requestDetection, 1500);
         }
       });
     </script>
   </head>
   <body>
-    <h1>Hand Sign Interpreter</h1>
+    <nav>
+      <a href="/" class="logo">
+        <img src="../res/logo_big.jpg" alt="Logo" />
+        <span>Hand Sign Interpreter</span>
+      </a>
+      <div class="nav-buttons">
+        <button class="nav-button">About</button>
+        <button class="nav-button">Contact</button>
+      </div>
+    </nav>
     <video autoplay style="display: none"></video>
     <img id="processedImage" />
     <textarea id="translation" rows="10" cols="50" readonly></textarea>
-    <div>
+    <div class="model-buttons">
       <button id="alphabetBtn">Alphabet Model</button>
       <button id="expressionBtn">Expression Model</button>
     </div>
