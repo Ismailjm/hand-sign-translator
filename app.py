@@ -1,6 +1,4 @@
-
-    
-# libraries
+# importing necessary libraries
 import warnings
 import logging
 import asyncio
@@ -13,40 +11,41 @@ import pickle
 import base64
 import time
 
-# Suppress all UserWarning warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode='eventlet')  # Set async_mode to 'eventlet' for asynchronous processing
 
-# Load the hand sign model
+# Load the alphabet and expression models
 try:
-    model_dict = pickle.load(open('./model/model.p', 'rb'))
-    model = model_dict['model']
-    logging.info("Model loaded successfully.")
+    alphabet_model_dict = pickle.load(open('./model/model_alpha.p', 'rb'))
+    alphabet_model = alphabet_model_dict['model']
+
+    expression_model_dict = pickle.load(open('./model/model_expressions.p', 'rb'))
+    expression_model = expression_model_dict['model']
+
+    # logging.info("Models loaded successfully.")
 except Exception as e:
-    logging.error("Failed to load model: %s", str(e))
+    # logging.error("Failed to load model: %s", str(e))
     raise ValueError("Failed to load model: ", str(e))
 
 # Initialize MediaPipe for hand detection with real-time processing
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
-hands = mp_hands.Hands(static_image_mode=False, min_detection_confidence=0.3)  # For continuous real-time detection
+hands = mp_hands.Hands(static_image_mode=False, min_detection_confidence=0.3)
 
-# Dictionary to map predicted labels to letters
-labels_dict = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J', 10: 'K', 
-               11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 20: 'U', 
-               21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'Z', 26: 'space', 27: 'delete'}
+# Label dictionaries
+alphabet_labels_dict = {
+    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H', 8: 'I', 
+    9: 'J', 10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 
+    17: 'R', 18: 'S', 19: 'T', 20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 
+    25: 'Z', 26: 'space', 27: 'delete'
+}
+expression_labels_dict = {0: "Hello ", 1: "Thank You ", 2: "Yes ", 3: "No ", 4: "I Love You "}
 
 last_detection_time = 0  # To control detection frequency
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
 @app.route('/draw_hand', methods=['POST'])
 def draw_hand():
     try:
@@ -98,18 +97,17 @@ def draw_hand():
     except Exception as e:
         print(f"Error in /draw_hand: {e}")
         return jsonify({'error': str(e)}), 500
-
-
-
+    
 @app.route('/process_frame', methods=['POST'])
 def process_frame():
     global last_detection_time
     try:
         data = request.json
         image_data = data.get('image')
-
-        if not image_data:
-            return jsonify({'prediction': 'Error: No image data provided'})
+        selected_model = data.get('model', 'alphabet')  # Default to alphabet if not specified
+        # warn about image in the website
+        # if not image_data:
+        #     return jsonify({'prediction': 'Error: No image data provided'})
 
         # Decode base64 image to OpenCV format
         image_data = image_data.split(',')[1]  # Remove the 'data:image/jpeg;base64,' part
@@ -147,7 +145,11 @@ def process_frame():
                         data_aux.append(hand_landmarks.landmark[i].y - min(y_))
 
                     # Adjust the number of features
-                    expected_features = 42
+                    if selected_model == 'alphabet':
+                        expected_features = 42
+                    else : 
+                        expected_features = 84
+                        
                     current_features = len(data_aux)
 
                     if current_features < expected_features:
@@ -156,25 +158,25 @@ def process_frame():
                         data_aux = data_aux[:expected_features]
 
                     try:
-                        # Predict the hand sign
-                        prediction = model.predict([np.asarray(data_aux)])
-                        predicted_character = labels_dict[int(prediction[0])]
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 4)
-                        cv2.putText(frame, predicted_character, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (255, 255, 255), 3,
-                        cv2.LINE_AA)
+                        # Choose the model and label dictionary based on the selected model
+                        if selected_model == 'alphabet':
+                            prediction = alphabet_model.predict([np.asarray(data_aux)])
+                            predicted_character = alphabet_labels_dict[int(prediction[0])]
+                        else:
+                            prediction = expression_model.predict([np.asarray(data_aux)])
+                            predicted_character = expression_labels_dict[int(prediction[0])]
+
                     except Exception as e:
-                        predicted_character = "Error"
-                        print(f"Prediction error: {e}")
+                        predicted_character = ""
+                        # logging.error(f"Prediction error: {e}")
 
                     break  # Only predict and draw for one hand
 
         return jsonify({'prediction': predicted_character})
 
     except Exception as e:
-        print(f"Error in /process_frame: {e}")
-        # return jsonify({'prediction': 'Error: ' + str(e)})
-        return jsonify({'prediction'})
-
+        # logging.error(f"Error in /process_frame: {e}")
+        return jsonify({'prediction':predicted_character})
 
 if __name__ == '__main__':
     # Use eventlet for production readiness and async support
