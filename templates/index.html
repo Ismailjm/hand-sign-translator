@@ -192,7 +192,12 @@
         border-radius: 6px;
         border-left: 2px solid #84d6c0;
       }
-
+      #translation {
+        background-color: rgba(132, 214, 192, 0.05);
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 2px solid #84d6c0;
+      }
       .history-time {
         font-size: 0.8rem;
         color: rgba(132, 214, 192, 0.7);
@@ -246,9 +251,13 @@
         const modelSelect = document.getElementById("modelSelect");
         const historyList = document.getElementById("historyList");
         const detectionCounter = document.getElementById("detectionCounter");
+        const textarea = document.getElementById("translation");
         let isProcessing = false;
         let detectionCount = 0;
-        let currentModel = "alphabet"; // Add this line to track current model
+        let currentModel = "alphabet"; // track current model
+        const now = new Date();
+        let lastLoggedTime = now.toLocaleTimeString(); //track the last time a word was logged
+        let words = "";
 
         // Initialize video stream
         navigator.mediaDevices
@@ -348,6 +357,14 @@
                 .then((data) => {
                   if (data.prediction) {
                     addToHistory(data.prediction);
+                    console.log("Received prediction data:", data);
+                    if (data.prediction === "delete") {
+                      textarea.value = textarea.value.slice(0, -1); // Delete last character
+                    } else if (data.prediction === "space") {
+                      textarea.value += " "; // Add space
+                    } else {
+                      textarea.value += data.prediction; // Add predicted character
+                    }
                   }
                   isProcessing = false;
                 })
@@ -381,10 +398,10 @@
         modelSelect.addEventListener("change", updateModelDescription);
 
         function addToHistory(sign) {
-          if (sign && sign !== "delete" && sign !== "space") {
+          if (sign) {
             const now = new Date();
             const timeString = now.toLocaleTimeString();
-            detectionCount++;
+            // let lastDetectionTime = timeString;
 
             const historyItem = document.createElement("div");
             historyItem.className = "history-item";
@@ -392,20 +409,39 @@
             const timeElement = document.createElement("div");
             timeElement.className = "history-time";
             timeElement.innerHTML = `
-              <span>${timeString}</span>
+              <span>${lastLoggedTime} --> ${timeString}</span>
               <span>Detection #${detectionCount}</span>
             `;
 
-            const textElement = document.createElement("div");
-            textElement.className = "history-text";
-            textElement.textContent = sign;
-
-            historyItem.appendChild(timeElement);
-            historyItem.appendChild(textElement);
-
-            historyList.insertBefore(historyItem, historyList.firstChild);
-            detectionCounter.textContent = `${detectionCount} detections`;
-
+            if (currentModel === "alphabet") {
+              if (sign === "delete") {
+                words = words.slice(0, -1);
+              } else {
+                if (sign === "space") {
+                  detectionCount++;
+                  const textElement = document.createElement("div");
+                  textElement.className = "history-text";
+                  textElement.textContent = words;
+                  historyItem.appendChild(timeElement);
+                  historyItem.appendChild(textElement);
+                  historyList.insertBefore(historyItem, historyList.firstChild);
+                  detectionCounter.textContent = `${detectionCount} detections`;
+                  words = "";
+                } else {
+                  words += sign;
+                }
+              }
+            } else {
+              detectionCount++;
+              const textElement = document.createElement("div");
+              textElement.className = "history-text";
+              textElement.textContent = sign;
+              historyItem.appendChild(timeElement);
+              historyItem.appendChild(textElement);
+              historyList.insertBefore(historyItem, historyList.firstChild);
+              detectionCounter.textContent = `${detectionCount} detections`;
+            }
+            lastLoggedTime = timeString;
             // Keep only last 50 items
             while (historyList.children.length > 50) {
               historyList.removeChild(historyList.lastChild);
@@ -428,11 +464,6 @@
         <div class="video-container">
           <video autoplay style="display: none"></video>
           <img id="processedImage" />
-          <!-- <div class="controls">
-            <button class="control-btn">⏸</button>
-            <button class="control-btn">⟲</button>
-            <button class="control-btn">⚙</button>
-          </div> -->
         </div>
 
         <div class="model-selection">
@@ -444,6 +475,7 @@
             Detect and interpret American Sign Language alphabet signs A-Z,
             along with space and delete gestures.
           </p>
+          <textarea id="translation" rows="10" cols="50" readonly></textarea>
         </div>
       </div>
 
