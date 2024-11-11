@@ -1,7 +1,4 @@
 # importing necessary libraries
-import warnings
-import logging
-import asyncio
 from flask import Flask, request, render_template, jsonify
 from flask_socketio import SocketIO
 import cv2
@@ -46,6 +43,7 @@ last_detection_time = 0  # To control detection frequency
 @app.route('/')
 def index():
     return render_template('index.html')
+
 @app.route('/draw_hand', methods=['POST'])
 def draw_hand():
     try:
@@ -72,8 +70,6 @@ def draw_hand():
         if frame is None:
             return jsonify({'error': 'Failed to decode image'}), 400
 
-        # Proceed with the rest of the processing, e.g., drawing landmarks or processing the frame
-        # ...
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = hands.process(frame_rgb)
 
@@ -105,9 +101,6 @@ def process_frame():
         data = request.json
         image_data = data.get('image')
         selected_model = data.get('model', 'alphabet')  # Default to alphabet if not specified
-        # warn about image in the website
-        # if not image_data:
-        #     return jsonify({'prediction': 'Error: No image data provided'})
 
         # Decode base64 image to OpenCV format
         image_data = image_data.split(',')[1]  # Remove the 'data:image/jpeg;base64,' part
